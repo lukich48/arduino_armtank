@@ -24,6 +24,8 @@
 #define CLAW_MIN 10
 #define CLAW_MAX 55
 
+#define ARM_SPEED 2
+
 uint8_t new_mac[] = {0x7c, 0x9e, 0xbd, 0xfa, 0x0b, 0xac};
 
 // если поворачивает в другую сторону
@@ -124,27 +126,26 @@ void do_arm()
     if (RX == 128)
         return;
 
-    int limit_angle = 60;
+    int limit_angle = (ARM_MAX - ARM_MIN) / 2 - 10;
     int angle;
 
     // взаимные ограничения
-    if (cur_wrist_angle < (WRIST_MAX - WRIST_MIN) / 2)
-        angle = constrain(cur_arm_angle, limit_angle, ARM_MAX); 
-    else
-        angle = constrain(cur_arm_angle, ARM_MIN, limit_angle); 
+    int rel_wrist_angle = map(cur_wrist_angle, WRIST_MIN, WRIST_MAX, ARM_MAX, ARM_MIN);
+    int min_angle = constrain(rel_wrist_angle - limit_angle, ARM_MIN, ARM_MAX);
+    int max_angle = constrain(rel_wrist_angle + limit_angle, ARM_MIN, ARM_MAX);
 
     if (RX < 128) // backward
     {
-        // byte angle = constrain(cur_arm_angle + 1, ARM_MIN, ARM_MAX);
-        write_angle(servo_arm, angle + 2, cur_arm_angle);
-        Serial.printf("arm angle: %d\n", angle);
+        angle = constrain(cur_arm_angle + ARM_SPEED, min_angle, max_angle);
+        write_angle(servo_arm, angle, cur_arm_angle);
     }
     else
     {
-        // byte angle = constrain(cur_arm_angle - 1, ARM_MIN, ARM_MAX);
-        write_angle(servo_arm, angle - 2, cur_arm_angle);
-        Serial.printf("arm angle: %d\n", angle);
+        angle = constrain(cur_arm_angle - ARM_SPEED, min_angle, max_angle);
+        write_angle(servo_arm, angle, cur_arm_angle);
     }
+
+    Serial.printf("arm angle: %d\n", angle);
 }
 
 void do_wrist()
@@ -154,32 +155,31 @@ void do_wrist()
     if (RY == 128)
         return;
 
-    int limit_angle = 60;
+    int limit_angle = (WRIST_MAX - WRIST_MIN) / 2 - 10;
     int angle;
 
     // взаимные ограничения
-    if (cur_arm_angle < (WRIST_MAX - WRIST_MIN) / 2)
-        angle = constrain(cur_wrist_angle, limit_angle, WRIST_MAX); 
-    else
-        angle = constrain(cur_wrist_angle, WRIST_MIN, limit_angle); 
+    int rel_arm_angle = map(cur_arm_angle, ARM_MIN, ARM_MAX, WRIST_MAX, WRIST_MIN);
+    int min_angle = constrain(rel_arm_angle - limit_angle, WRIST_MIN, WRIST_MAX);
+    int max_angle = constrain(rel_arm_angle + limit_angle, WRIST_MIN, WRIST_MAX);
 
     if (RY > 128) // down
     {       
-        // byte angle = constrain(cur_wrist_angle + 1, WRIST_MIN, WRIST_MAX);
-        write_angle(servo_wrist, angle + 2, cur_wrist_angle);
-        Serial.printf("wrist angle: %d\n", angle);
+        angle = constrain(cur_wrist_angle + ARM_SPEED, min_angle, max_angle);
+        write_angle(servo_wrist, angle, cur_wrist_angle);
     }
     else
     {
-        // byte angle = constrain(cur_wrist_angle - 1, WRIST_MIN, WRIST_MAX);
-        write_angle(servo_wrist, angle - 2, cur_wrist_angle);
-        Serial.printf("wrist angle: %d\n", angle);
+        angle = constrain(cur_wrist_angle - ARM_SPEED, min_angle, max_angle);
+        write_angle(servo_wrist, angle, cur_wrist_angle);
     }
+
+    Serial.printf("wrist angle: %d\n", angle);
 }
 
 void do_claw()
 {
-    if (PS4.Square())
+    if (PS4.L1()) // разомкнуть
     {
         if (servo_claw.attached())
         {
@@ -190,7 +190,7 @@ void do_claw()
             Serial.printf("claw angle: %d\n", angle);
         }
     }
-    else if (PS4.Cross())
+    else if (PS4.R1()) // замкнуть
     {
         servo_claw.write(0);
         delay(200);
@@ -225,7 +225,7 @@ void setup(){
 
 void loop(){
     static uint32_t tmr;
-    if (millis() - tmr >= 30)
+    if (millis() - tmr >= 20)
     {
         tmr = millis();
         if (PS4.isConnected())
