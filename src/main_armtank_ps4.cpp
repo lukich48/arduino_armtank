@@ -22,7 +22,9 @@
 #define WRIST_MAX 120
 
 #define CLAW_MIN 10
-#define CLAW_MAX 55
+#define CLAW_MAX 50
+#define CLAW_MIN_LIM 0
+#define CLAW_MAX_LIM 55
 
 #define ARM_SPEED 2
 
@@ -179,24 +181,35 @@ void do_wrist()
 
 void do_claw()
 {
+    static uint32_t tmr;
+    static bool claw, unclaw;
+
+    // ослабить захват
+    if (millis() - tmr >= 500 && (claw || unclaw))
+    {
+        tmr = millis();
+
+        if (claw)
+        {
+            servo_claw.write(CLAW_MIN);
+            claw = false;
+        }
+        else if (unclaw)
+        {
+            servo_claw.write(CLAW_MAX);
+            unclaw = false;
+        }
+    }
+
     if (PS4.L1()) // разомкнуть
     {
-        if (servo_claw.attached())
-        {
-            byte angle = CLAW_MAX;
-            servo_claw.write(angle);
-            delay(500);
-            servo_claw.write(angle-5);
-            Serial.printf("claw angle: %d\n", angle);
-        }
+        servo_claw.write(CLAW_MAX_LIM);
+        unclaw = true;
     }
     else if (PS4.R1()) // замкнуть
     {
-        servo_claw.write(0);
-        delay(200);
-        byte angle = CLAW_MIN;
-        servo_claw.write(angle);
-        Serial.printf("claw angle: %d\n", angle);
+        servo_claw.write(CLAW_MIN_LIM);
+        claw = true;
     }
 }
 
