@@ -201,12 +201,12 @@ void do_claw()
         }
     }
 
-    if (PS4.L1()) // разомкнуть
+    if (PS4.L1() || PS4.Square()) // разомкнуть
     {
         servo_claw.write(CLAW_MAX_LIM);
         unclaw = true;
     }
-    else if (PS4.R1()) // замкнуть
+    else if (PS4.R1() || PS4.Cross()) // замкнуть
     {
         servo_claw.write(CLAW_MIN_LIM);
         claw = true;
