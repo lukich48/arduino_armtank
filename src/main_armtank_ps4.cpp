@@ -39,6 +39,7 @@ int cur_drive_angle_l = 90;
 int cur_drive_angle_r = 90;
 int cur_arm_angle = 120;
 int cur_wrist_angle = 40;
+int cur_claw_angle = 50;
 
 ServoMotorHelper motor_helper_l(72, 51, 111, 132);
 ServoMotorHelper motor_helper_r(111, 132, 72, 51);
@@ -184,32 +185,30 @@ void do_claw()
     static uint32_t tmr;
     static bool claw, unclaw;
 
-    // ослабить захват
-    if (millis() - tmr >= 500 && (claw || unclaw))
+    if (PS4.Square()) // разомкнуть
     {
-        tmr = millis();
-
-        if (claw)
-        {
-            servo_claw.write(CLAW_MIN);
-            claw = false;
-        }
-        else if (unclaw)
-        {
-            servo_claw.write(CLAW_MAX);
-            unclaw = false;
-        }
-    }
-
-    if (PS4.L1() || PS4.Square()) // разомкнуть
-    {
-        servo_claw.write(CLAW_MAX_LIM);
+        write_angle(servo_claw, CLAW_MAX_LIM, cur_claw_angle);
         unclaw = true;
     }
-    else if (PS4.R1() || PS4.Cross()) // замкнуть
+    else if (PS4.Cross()) // замкнуть
     {
-        servo_claw.write(CLAW_MIN_LIM);
+        write_angle(servo_claw, CLAW_MIN_LIM, cur_claw_angle);
         claw = true;
+    }
+
+    // плавное сведение
+    int angle;
+    if (PS4.R1()) // разомкнуть
+    {
+        angle = constrain(cur_claw_angle + ARM_SPEED, 0, 180);
+        write_angle(servo_claw, angle, cur_claw_angle);
+        Serial.printf("wrist angle: %d\n", angle);
+    }
+    else if (PS4.L1()) // замкнуть
+    {
+        angle = constrain(cur_claw_angle - ARM_SPEED, 0, 180);
+        write_angle(servo_claw, angle, cur_claw_angle);
+        Serial.printf("wrist angle: %d\n", angle);
     }
 }
 
