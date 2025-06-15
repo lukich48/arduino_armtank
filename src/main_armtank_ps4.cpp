@@ -182,29 +182,25 @@ void do_wrist()
 
 void do_claw()
 {
-    static uint32_t tmr;
-    static bool claw, unclaw;
 
-    if (PS4.Square()) // разомкнуть
+    if (PS4.Cross()) // разомкнуть
     {
         write_angle(servo_claw, CLAW_MAX_LIM, cur_claw_angle);
-        unclaw = true;
     }
-    else if (PS4.Cross()) // замкнуть
+    else if (PS4.Square()) // замкнуть
     {
         write_angle(servo_claw, CLAW_MIN_LIM, cur_claw_angle);
-        claw = true;
     }
 
     // плавное сведение
     int angle;
-    if (PS4.R1()) // разомкнуть
+    if (PS4.L2()) // разомкнуть
     {
         angle = constrain(cur_claw_angle + ARM_SPEED, 0, 180);
         write_angle(servo_claw, angle, cur_claw_angle);
         Serial.printf("wrist angle: %d\n", angle);
     }
-    else if (PS4.L1()) // замкнуть
+    else if (PS4.R2()) // замкнуть
     {
         angle = constrain(cur_claw_angle - ARM_SPEED, 0, 180);
         write_angle(servo_claw, angle, cur_claw_angle);
