@@ -182,7 +182,6 @@ void do_wrist()
 
 void do_claw()
 {
-
     if (PS4.Cross()) // разомкнуть
     {
         write_angle(servo_claw, CLAW_MAX_LIM, cur_claw_angle);
@@ -219,16 +218,16 @@ void stop_all_motors()
 
 void setup(){
     Serial.begin(115200);
+    Serial.setDebugOutput(true);
 
     change_mac();
+    connect_ps4_controller();
 
     servo_l.attach(PIN_L_SERVO);
     servo_r.attach(PIN_R_SERVO);
     servo_arm.attach(PIN_ARM);
     servo_wrist.attach(PIN_WRIST);
     servo_claw.attach(PIN_CLAW);
-
-    connect_ps4_controller();
 }
 
 void loop(){
